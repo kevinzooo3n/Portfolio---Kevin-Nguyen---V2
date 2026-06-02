@@ -49,6 +49,7 @@ export default function App() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [formData, setFormData] = useState({ firstName: "", lastName: "", email: "", projectType: "", message: "" });
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 60);
@@ -504,32 +505,62 @@ export default function App() {
               transition={{ duration: 0.65, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
             >
               <div className="flex flex-col sm:flex-row gap-3">
-                {[{ label: "Prénom", placeholder: "Jean" }, { label: "Nom", placeholder: "Garnier" }].map(({ label, placeholder }) => (
+                {[{ label: "Prénom", placeholder: "Jean", key: "firstName" }, { label: "Nom", placeholder: "Garnier", key: "lastName" }].map(({ label, placeholder, key }) => (
                   <div key={label} className="bg-[#151518] border border-[#2a2a30] rounded-[10px] p-4 flex-1 focus-within:border-[#F4DDB5] transition-colors">
                     <p className="font-light text-[#807f85] text-[10px] tracking-[1px] mb-1">{label}</p>
-                    <input className="bg-transparent text-[#afaeb4] text-[15px] w-full outline-none border-none" placeholder={placeholder} />
+                    <input className="bg-transparent text-[#afaeb4] text-[15px] w-full outline-none border-none" placeholder={placeholder}
+                      value={formData[key as keyof typeof formData]}
+                      onChange={e => setFormData({ ...formData, [key]: e.target.value })}
+                    />
                   </div>
                 ))}
               </div>
               {[
-                { label: "Email", placeholder: "jean.garnier@exemple.com", type: "email" },
-                { label: "Type de projet", placeholder: "Branding, Web, Merch..." },
-              ].map(({ label, placeholder, type }) => (
+                { label: "Email", placeholder: "jean.garnier@exemple.com", type: "email", key: "email" },
+                { label: "Type de projet", placeholder: "Branding, Web, Merch...", key: "projectType" },
+              ].map(({ label, placeholder, type, key }) => (
                 <div key={label} className="bg-[#151518] border border-[#2a2a30] rounded-[10px] p-4 focus-within:border-[#F4DDB5] transition-colors">
                   <p className="font-light text-[#807f85] text-[10px] tracking-[1px] mb-1">{label}</p>
-                  <input type={type || "text"} className="bg-transparent text-[#afaeb4] text-[15px] w-full outline-none border-none" placeholder={placeholder} />
+                  <input type={type || "text"} className="bg-transparent text-[#afaeb4] text-[15px] w-full outline-none border-none" placeholder={placeholder}
+                    value={formData[key as keyof typeof formData]}
+                    onChange={e => setFormData({ ...formData, [key]: e.target.value })}
+                  />
                 </div>
               ))}
               <div className="bg-[#151518] border border-[#2a2a30] rounded-[10px] p-4 focus-within:border-[#F4DDB5] transition-colors">
                 <p className="font-light text-[#807f85] text-[10px] tracking-[1px] mb-1">Message</p>
-                <textarea className="bg-transparent text-[#afaeb4] text-[15px] w-full h-[90px] outline-none border-none resize-none" placeholder="Décrivez votre projet..." />
+                <textarea className="bg-transparent text-[#afaeb4] text-[15px] w-full h-[90px] outline-none border-none resize-none" placeholder="Décrivez votre projet..."
+                  value={formData.message}
+                  onChange={e => setFormData({ ...formData, message: e.target.value })}
+                />
               </div>
 
               <motion.button
                 className="flex h-[52px] items-center justify-center rounded-full px-8 w-full sm:w-[220px] cursor-pointer mt-2"
                 style={{ backgroundColor: "#efedea" }}
                 whileHover={{ scale: 1.04, backgroundColor: "#F4DDB5" }} whileTap={{ scale: 0.97 }}
-                onClick={() => { setSubmitted(true); setTimeout(() => setSubmitted(false), 3000); }}
+                onClick={async () => {
+                  try {
+                    const res = await fetch("https://formspree.io/f/mlgkrern", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+                      body: JSON.stringify({
+                        prenom: formData.firstName,
+                        nom: formData.lastName,
+                        email: formData.email,
+                        type_projet: formData.projectType,
+                        message: formData.message,
+                      }),
+                    });
+                    if (res.ok) {
+                      setSubmitted(true);
+                      setFormData({ firstName: "", lastName: "", email: "", projectType: "", message: "" });
+                      setTimeout(() => setSubmitted(false), 5000);
+                    }
+                  } catch (e) {
+                    console.error(e);
+                  }
+                }}
               >
                 <p className="font-medium text-[#0a0a0c] text-[14px] whitespace-nowrap">Envoyer le message →</p>
               </motion.button>
